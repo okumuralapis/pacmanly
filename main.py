@@ -2,6 +2,11 @@ import pygame
 import sys
 import os
 
+global run_game, win_screen
+
+run_game = False
+win_screen = False
+
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
@@ -36,7 +41,6 @@ class Button:
     def draw(self, surface):
         action = False
         pos = pygame.mouse.get_pos()
-        # check mouseover and clicked conditions
         if self.rect.collidepoint(pos):
             if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False:
                 self.clicked = True
@@ -64,10 +68,12 @@ def game(screen):
 
 
 def start_screen(screen, w, h):
+    global win_screen, run_game
     screen.fill('#131332')
     intro_text = "Pacman"
     start_button = Button(160, 200, load_image('UI-03.png'), 0.2)
     quit_button = Button(160, 250, load_image('UI-03.png'), 0.2)
+    winners_button = Button(160, 300, load_image('UI-03.png'), 0.2)
     font1 = pygame.font.Font('data/monogram.ttf', 50)
     font2 = pygame.font.Font('data/monogram.ttf', 30)
     timer = pygame.time.Clock()
@@ -77,6 +83,7 @@ def start_screen(screen, w, h):
     finished = False
     lbl1 = font2.render('Start game', True, 'white')
     lbl2 = font2.render('quit', True, 'white')
+    lbl3 = font2.render('winners', True, 'white')
 
     running = True
     while running:
@@ -84,6 +91,8 @@ def start_screen(screen, w, h):
             running = False
         if start_button.draw(screen):
             run_game = True
+        if winners_button.draw(screen):
+            win_screen = True
         timer.tick(60)
         if counter < speed * len(intro_text):
             counter += 1
@@ -93,12 +102,20 @@ def start_screen(screen, w, h):
         screen.blit(snip, (180, 100))
         screen.blit(lbl1, (180, 205))
         screen.blit(lbl2, (215, 250))
+        screen.blit(lbl3, (205, 305))
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
         pygame.display.flip()
     return running
+
+
+def winners_screen(screen):
+    screen.fill('#131332')
+    font1 = pygame.font.Font('data/monogram.ttf', 50)
+    font1.set_italic(1)
+    lbl1 = font1.render('Best players', True, 'white')
 
 
 def main():
@@ -110,6 +127,8 @@ def main():
         running = True
     else:
         running = False
+    if win_screen:
+        winners_screen(screen)
     # hero, x, y = generate_level(level_map)
     while running:
         for event in pygame.event.get():

@@ -2,8 +2,6 @@ import pygame
 import sys
 import os
 
-global run_game, win_screen
-
 run_game = False
 win_screen = False
 
@@ -92,7 +90,8 @@ def start_screen(screen, w, h):
         if start_button.draw(screen):
             run_game = True
         if winners_button.draw(screen):
-            win_screen = True
+            winners_screen(screen)
+            running = False
         timer.tick(60)
         if counter < speed * len(intro_text):
             counter += 1
@@ -127,8 +126,6 @@ def main():
         running = True
     else:
         running = False
-    if win_screen:
-        winners_screen(screen)
     # hero, x, y = generate_level(level_map)
     while running:
         for event in pygame.event.get():

@@ -60,7 +60,29 @@ def play_window():
 
 
 def winners_window():
-    pass
+    pygame.display.set_caption('List of winners')
+    counter = 0
+    speed = 3
+    finished = False
+    snip = font.render('', True, 'white')
+
+    while True:
+        screen.fill('#131332')
+        mouse_pos = pygame.mouse.get_pos()
+        title = fontb.render('Best players', True, 'white')
+
+        clock.tick(60)
+        if counter < speed * len('Best players'):
+            counter += 1
+        elif counter >= speed * len('Best players'):
+            finished = True
+        snip = fontb.render('Best players'[0:counter // speed], True, 'white')
+        screen.blit(snip, (90, 50))
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+        pygame.display.update()
 
 
 def menu():

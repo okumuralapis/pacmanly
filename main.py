@@ -56,6 +56,16 @@ clock = pygame.time.Clock()
 
 
 def play_window():
+    pygame.display.set_caption('Game')
+    pygame.display.set_mode((800, 800))
+
+    while True:
+        screen.fill('black')
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+        pygame.display.update()
     pass
 
 

@@ -1,6 +1,41 @@
 import pygame
 import sys
 import os
+import csv
+
+
+class Tile(pygame.sprite.Sprite):
+    def __init__(self, tile_type, pos_x, pos_y):
+        super().__init__(tiles_group, all_sprites)
+        tile_width = tile_height = 50
+
+
+def load_level(filename):
+    filename = "data/" + filename
+    # читаем уровень, убирая символы перевода строки
+    with open(filename, 'r') as mapFile:
+        level_map = [line.strip() for line in mapFile]
+
+    # и подсчитываем максимальную длину
+    max_width = max(map(len, level_map))
+
+    # дополняем каждую строку пустыми клетками ('.')
+    return list(map(lambda x: x.ljust(max_width, '.'), level_map))
+
+
+def generate_level(level):
+    new_player, x, y = None, None, None
+    for y in range(len(level)):
+        for x in range(len(level[y])):
+            if level[y][x] == '.':
+                Tile('empty', x, y)
+            elif level[y][x] == '#':
+                Tile('wall', x, y)
+            elif level[y][x] == '@':
+                Tile('empty', x, y)
+                new_player = Player(x, y)
+    # вернем игрока, а также размер поля в клетках
+    return new_player, x, y
 
 
 def load_image(name, colorkey=None):
@@ -61,6 +96,10 @@ def play_window():
 
     while True:
         screen.fill('black')
+        level_map = load_level('map1')
+        max_x = len(level_map)
+        max_y = len(level_map[0])
+        hero, x, y = generate_level(level_map)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -75,6 +114,11 @@ def winners_window():
     speed = 3
     finished = False
     snip = font.render('', True, 'white')
+    b = 40
+
+    with open('data/winners.csv') as f:
+        reader = csv.reader(f, delimiter=';', quotechar='"')
+        re = [f'{names} {score}' for names, score in reader]
 
     while True:
         screen.fill('#131332')
@@ -88,6 +132,11 @@ def winners_window():
             finished = True
         snip = fontb.render('Best players'[0:counter // speed], True, 'white')
         screen.blit(snip, (90, 50))
+        for i in re[1:]:
+            tmp = font.render(i, True, 'white')
+            screen.blit(tmp, (100, b))
+            b += 0.5
+            clock.tick(60)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:

@@ -4,6 +4,27 @@ import os
 import csv
 
 
+class Pacman(pygame.sprite.Sprite):
+    def __init__(self, *group):
+        super().__init__(*group)
+        self.tile_width = self.tile_height = load_image('pacman-left/1.png').get_width()
+
+        self.rt = 'pacman-right'
+        self.image = load_image(f'{self.rt}/1.png')
+        self.rect = self.image.get_rect()
+        self.rect.x = 10
+        self.rect.y = 10
+        self.cur_frame = 0
+
+    def update(self, rotation, *args):
+        self.rt = f'pacman-{rotation}'
+        self.frames = [load_image(f'{self.rt}/1.png'),
+                       load_image(f'{self.rt}/2.png'),
+                       load_image(f'{self.rt}/3.png')]
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
+
+
 class Tile(pygame.sprite.Sprite):
     def __init__(self, tile_type, pos_x, pos_y):
         super().__init__(tiles_group, all_sprites)

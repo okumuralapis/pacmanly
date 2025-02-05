@@ -109,6 +109,8 @@ pygame.display.set_caption('Menu')
 font = pygame.font.Font('data/monogram.ttf', 30)
 fontb = pygame.font.Font('data/monogram.ttf', 50)
 clock = pygame.time.Clock()
+tiles_group = pygame.sprite.Group()
+all_sprites = pygame.sprite.Group()
 
 
 def play_window():
@@ -156,12 +158,20 @@ def winners_window():
         for i in re[1:]:
             tmp = font.render(i, True, 'white')
             screen.blit(tmp, (100, b))
-            b += 0.5
             clock.tick(60)
+
+        btn_pic = load_image('UI-03.png')
+        btn_pic = pygame.transform.scale(btn_pic, (100, 40))
+        back_btn = Button(btn_pic, 60, 30, 'Back')
+        back_btn.changeColor(mouse_pos)
+        back_btn.update()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if back_btn.checkForInput(mouse_pos):
+                    menu()
         pygame.display.update()
 
 

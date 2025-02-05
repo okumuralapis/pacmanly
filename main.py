@@ -1,13 +1,62 @@
 import pygame
+import pytmx
 import sys
 import os
 import csv
 
+pygame.init()
+screen = pygame.display.set_mode((400, 400))
+pygame.display.set_caption('Menu')
+font = pygame.font.Font('data/monogram.ttf', 30)
+fontb = pygame.font.Font('data/monogram.ttf', 50)
+clock = pygame.time.Clock()
+all_sprites = pygame.sprite.Group()
+
+
+class Game:
+    def __init__(self, map, hero, ghosts):
+        self.map = map
+        self.hero = hero
+        self.ghosts = ghosts
+
+    def render(self, screen):
+        self.map.render(screen)
+        self.hero.render(screen)
+        self.ghosts.render(screen)
+
+    def update_hero(self):
+        next_x, next_y = self.hero.get_position()
+        if pygame.key.get_pressed()[pygame.K_LEFT]:
+            next_x += 1
+        if pygame.key.get_pressed()[pygame.K_RIGHT]:
+            next_x -= 1
+        if pygame.key.get_pressed()[pygame.K_UP]:
+            next_y -= 1
+        if pygame.key.get_pressed()[pygame.K_DOWN]:
+            next_y += 1
+
+
+class Playground:
+    def __init__(self, filename, free_tiles):
+        self.map = pytmx.load_pygame(f'data/{filename}')
+        self.height = self.map.height
+        self.width = self.map.width
+        self.tile_size = self.map.tilewidth
+
+    def render(self):
+        for x in range(self.height):
+            for y in range(self.width):
+                image = self.map.get_tile_image(x, y, 0)
+                if image: screen.blit(image, (x * self.tile_size, y * self.tile_size))
+
+    def get_tile_id(self, position):
+        return self.map.tiledgidmap[self.map.get_tile_gid(*position, 0)]
+
 
 class Pacman(pygame.sprite.Sprite):
-    def __init__(self, *group):
-        super().__init__(*group)
-        self.tile_width = self.tile_height = load_image('pacman-left/1.png').get_width()
+    def __init__(self):
+        super().__init__()
+        self.tile_width = self.tile_height = load_image(os.path.join('pacman-left', '1.png')).get_width()
 
         self.rt = 'pacman-right'
         self.image = load_image(f'{self.rt}/1.png')
@@ -24,39 +73,8 @@ class Pacman(pygame.sprite.Sprite):
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = self.frames[self.cur_frame]
 
-
-class Tile(pygame.sprite.Sprite):
-    def __init__(self, tile_type, pos_x, pos_y):
-        super().__init__(tiles_group, all_sprites)
-        tile_width = tile_height = 50
-
-
-def load_level(filename):
-    filename = "data/" + filename
-    # читаем уровень, убирая символы перевода строки
-    with open(filename, 'r') as mapFile:
-        level_map = [line.strip() for line in mapFile]
-
-    # и подсчитываем максимальную длину
-    max_width = max(map(len, level_map))
-
-    # дополняем каждую строку пустыми клетками ('.')
-    return list(map(lambda x: x.ljust(max_width, '.'), level_map))
-
-
-def generate_level(level):
-    new_player, x, y = None, None, None
-    for y in range(len(level)):
-        for x in range(len(level[y])):
-            if level[y][x] == '.':
-                Tile('empty', x, y)
-            elif level[y][x] == '#':
-                Tile('wall', x, y)
-            elif level[y][x] == '@':
-                Tile('empty', x, y)
-                new_player = Player(x, y)
-    # вернем игрока, а также размер поля в клетках
-    return new_player, x, y
+    def render(self):
+        screen.blit(self.image, (self.rect.x, self.rect.y))
 
 
 def load_image(name, colorkey=None):
@@ -103,32 +121,20 @@ class Button:
             self.text = font.render(self.text_input, True, "white")
 
 
-pygame.init()
-screen = pygame.display.set_mode((400, 400))
-pygame.display.set_caption('Menu')
-font = pygame.font.Font('data/monogram.ttf', 30)
-fontb = pygame.font.Font('data/monogram.ttf', 50)
-clock = pygame.time.Clock()
-tiles_group = pygame.sprite.Group()
-all_sprites = pygame.sprite.Group()
-
-
 def play_window():
     pygame.display.set_caption('Game')
     pygame.display.set_mode((800, 800))
 
-    while True:
-        screen.fill('black')
-        level_map = load_level('map1')
-        max_x = len(level_map)
-        max_y = len(level_map[0])
-        hero, x, y = generate_level(level_map)
-
+    playground = Playground('m.tmx', [30, 46])
+    hero = Pacman()
+    # hero / ghosts
+    playground.render()
+    running = True
+    game_over = False
+    while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-        pygame.display.update()
-    pass
 
 
 def winners_window():

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="30" height="30" tilewidth="32" tileheight="32" infinite="0" nextlayerid="4" nextobjectid="1">
+ <tileset firstgid="1" source="bk.tsx"/>
+ <tileset firstgid="31" source="char.tsx"/>
+ <layer id="1" name="background" width="30" height="30">
+  <data encoding="base64" compression="zlib">
+   eJzFV0uOwzAI9WRRb7pwtu7lfLQcxUcrUcIMYfjVbtUnIcsfeICpSWtKfU2pvSplQAelHuMQRvVO3U71f0AWIjDf+B6urcq6ZIfvc17Yb3cYUZarrQbzDmNnvJd1Yucii8GLNlCoLSFXKrgdbovzaniAr3s9wNjI2jCivO8G5cWYUGhsSThTnLOWzRfy3AWfQ+ckRHnXIG/0znZ79ciFKPXMSzn827S6OvO5lXNenTew+n6p8TrnXfC7l/xC3srifrC8IF81bFp1KPhmxoF+zfymLXi8n4KWP69OJDj32/YzOWgLz3n17N0vr+es9P3MemOkni3fMH85+G7kv7o363nme2OyH/36nYV7JRz/+iBFZvlG8FySvqC9s30iHGpHXbd4o/2FA/UsXuvN53pC/xXzT3q6pmvWvLPXR/Rw/9u80rtVjG8fLYeRd8qL91P4Ju9t8H/ZjADn9gQLzJhZ
+  </data>
+ </layer>
+</map>

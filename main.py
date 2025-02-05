@@ -1,6 +1,62 @@
 import pygame
 import sys
 import os
+import csv
+
+
+class Pacman(pygame.sprite.Sprite):
+    def __init__(self, *group):
+        super().__init__(*group)
+        self.tile_width = self.tile_height = load_image('pacman-left/1.png').get_width()
+
+        self.rt = 'pacman-right'
+        self.image = load_image(f'{self.rt}/1.png')
+        self.rect = self.image.get_rect()
+        self.rect.x = 10
+        self.rect.y = 10
+        self.cur_frame = 0
+
+    def update(self, rotation, *args):
+        self.rt = f'pacman-{rotation}'
+        self.frames = [load_image(f'{self.rt}/1.png'),
+                       load_image(f'{self.rt}/2.png'),
+                       load_image(f'{self.rt}/3.png')]
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
+
+
+class Tile(pygame.sprite.Sprite):
+    def __init__(self, tile_type, pos_x, pos_y):
+        super().__init__(tiles_group, all_sprites)
+        tile_width = tile_height = 50
+
+
+def load_level(filename):
+    filename = "data/" + filename
+    # читаем уровень, убирая символы перевода строки
+    with open(filename, 'r') as mapFile:
+        level_map = [line.strip() for line in mapFile]
+
+    # и подсчитываем максимальную длину
+    max_width = max(map(len, level_map))
+
+    # дополняем каждую строку пустыми клетками ('.')
+    return list(map(lambda x: x.ljust(max_width, '.'), level_map))
+
+
+def generate_level(level):
+    new_player, x, y = None, None, None
+    for y in range(len(level)):
+        for x in range(len(level[y])):
+            if level[y][x] == '.':
+                Tile('empty', x, y)
+            elif level[y][x] == '#':
+                Tile('wall', x, y)
+            elif level[y][x] == '@':
+                Tile('empty', x, y)
+                new_player = Player(x, y)
+    # вернем игрока, а также размер поля в клетках
+    return new_player, x, y
 
 
 def load_image(name, colorkey=None):
@@ -53,6 +109,8 @@ pygame.display.set_caption('Menu')
 font = pygame.font.Font('data/monogram.ttf', 30)
 fontb = pygame.font.Font('data/monogram.ttf', 50)
 clock = pygame.time.Clock()
+tiles_group = pygame.sprite.Group()
+all_sprites = pygame.sprite.Group()
 
 
 def play_window():
@@ -61,6 +119,10 @@ def play_window():
 
     while True:
         screen.fill('black')
+        level_map = load_level('map1')
+        max_x = len(level_map)
+        max_y = len(level_map[0])
+        hero, x, y = generate_level(level_map)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -75,6 +137,11 @@ def winners_window():
     speed = 3
     finished = False
     snip = font.render('', True, 'white')
+    b = 40
+
+    with open('data/winners.csv') as f:
+        reader = csv.reader(f, delimiter=';', quotechar='"')
+        re = [f'{names} {score}' for names, score in reader]
 
     while True:
         screen.fill('#131332')
@@ -88,10 +155,23 @@ def winners_window():
             finished = True
         snip = fontb.render('Best players'[0:counter // speed], True, 'white')
         screen.blit(snip, (90, 50))
+        for i in re[1:]:
+            tmp = font.render(i, True, 'white')
+            screen.blit(tmp, (100, b))
+            clock.tick(60)
+
+        btn_pic = load_image('UI-03.png')
+        btn_pic = pygame.transform.scale(btn_pic, (100, 40))
+        back_btn = Button(btn_pic, 60, 30, 'Back')
+        back_btn.changeColor(mouse_pos)
+        back_btn.update()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if back_btn.checkForInput(mouse_pos):
+                    menu()
         pygame.display.update()
 
 

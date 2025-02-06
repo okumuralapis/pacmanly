@@ -4,6 +4,7 @@ import sys
 import os
 import csv
 
+os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (500, 50)
 pygame.init()
 screen = pygame.display.set_mode((400, 400))
 pygame.display.set_caption('Menu')
@@ -20,9 +21,9 @@ class Game:
         self.ghosts = ghosts
 
     def render(self, screen):
-        self.map.render(screen)
-        self.hero.render(screen)
-        self.ghosts.render(screen)
+        self.map.render()
+        # self.hero.render(screen)
+        # self.ghosts.render(screen)
 
     def update_hero(self):
         next_x, next_y = self.hero.get_position()
@@ -34,6 +35,7 @@ class Game:
             next_y -= 1
         if pygame.key.get_pressed()[pygame.K_DOWN]:
             next_y += 1
+        return next_x, next_y
 
 
 class Playground:
@@ -44,28 +46,31 @@ class Playground:
         self.tile_size = self.map.tilewidth
 
     def render(self):
-        for x in range(self.height):
-            for y in range(self.width):
-                image = self.map.get_tile_image(x, y, 0)
-                if image: screen.blit(image, (x * self.tile_size, y * self.tile_size))
+        for layer in self.map.visible_layers:
+            if isinstance(layer, pytmx.TiledTileLayer):
+                for x, y, gid, in layer:
+                    tile = self.map.get_tile_image_by_gid(gid)
+                    if tile: screen.blit(tile, (x * self.tile_size,
+                                                y * self.tile_size))
 
     def get_tile_id(self, position):
         return self.map.tiledgidmap[self.map.get_tile_gid(*position, 0)]
 
 
 class Pacman(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, coords):
         super().__init__()
         self.tile_width = self.tile_height = load_image(os.path.join('pacman-left', '1.png')).get_width()
 
-        self.rt = 'pacman-right'
+        self.rt = 'pacman-left'
         self.image = load_image(f'{self.rt}/1.png')
         self.rect = self.image.get_rect()
         self.rect.x = 10
         self.rect.y = 10
         self.cur_frame = 0
+        self.x, self.y = coords
 
-    def update(self, rotation, *args):
+    def update(self, new_coords, rotation, *args):
         self.rt = f'pacman-{rotation}'
         self.frames = [load_image(f'{self.rt}/1.png'),
                        load_image(f'{self.rt}/2.png'),
@@ -73,8 +78,17 @@ class Pacman(pygame.sprite.Sprite):
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = self.frames[self.cur_frame]
 
+        self.x, self.y = new_coords
+
+
     def render(self):
-        screen.blit(self.image, (self.rect.x, self.rect.y))
+        delta = (self.image.get_width() - 32) // 2
+        screen.blit(self.image, (self.x * 32 - delta, self.y * 32 - delta))
+
+    def get_position(self):
+        return self.x, self.y
+
+
 
 
 def load_image(name, colorkey=None):
@@ -121,20 +135,39 @@ class Button:
             self.text = font.render(self.text_input, True, "white")
 
 
+class Enemy:
+    pass
+
+
 def play_window():
     pygame.display.set_caption('Game')
-    pygame.display.set_mode((800, 800))
-
+    pygame.display.set_mode((960, 1020))
     playground = Playground('m.tmx', [30, 46])
-    hero = Pacman()
-    # hero / ghosts
-    playground.render()
+    hero = Pacman((14, 18))
+    ghosts = Enemy()
+    game = Game(playground, hero, ghosts)
     running = True
     game_over = False
+    pac_rot = 'left'
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
+            key = pygame.key.get_pressed()
+            if key[pygame.K_UP]:
+                pac_rot = 'up'
+            if key[pygame.K_DOWN]:
+                pac_rot = 'down'
+            if key[pygame.K_RIGHT]:
+                pac_rot = 'left'
+            if key[pygame.K_LEFT]:
+                pac_rot = 'right'
+        screen.fill('black')
+        playground.render()
+        hero.update(game.update_hero(), pac_rot)
+        hero.render()
+        pygame.display.flip()
+        clock.tick(10)
 
 
 def winners_window():

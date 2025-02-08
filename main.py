@@ -12,6 +12,7 @@ font = pygame.font.Font('data/monogram.ttf', 30)
 fontb = pygame.font.Font('data/monogram.ttf', 50)
 clock = pygame.time.Clock()
 all_sprites = pygame.sprite.Group()
+tiles = []
 
 
 class Game:
@@ -28,14 +29,16 @@ class Game:
     def update_hero(self):
         next_x, next_y = self.hero.get_position()
         if pygame.key.get_pressed()[pygame.K_LEFT]:
-            next_x += 1
-        if pygame.key.get_pressed()[pygame.K_RIGHT]:
             next_x -= 1
+        if pygame.key.get_pressed()[pygame.K_RIGHT]:
+            next_x += 1
         if pygame.key.get_pressed()[pygame.K_UP]:
             next_y -= 1
         if pygame.key.get_pressed()[pygame.K_DOWN]:
             next_y += 1
-        return next_x, next_y
+        if [next_x, next_y] in tiles:
+            return next_x, next_y
+        return
 
 
 class Playground:
@@ -47,14 +50,21 @@ class Playground:
 
     def render(self):
         for layer in self.map.visible_layers:
-            if isinstance(layer, pytmx.TiledTileLayer):
+            if isinstance(layer, pytmx.TiledTileLayer) and layer.name == 'background':
                 for x, y, gid, in layer:
                     tile = self.map.get_tile_image_by_gid(gid)
-                    if tile: screen.blit(tile, (x * self.tile_size,
-                                                y * self.tile_size))
+                    if tile:
+                        screen.blit(tile, (x * self.tile_size,
+                                           y * self.tile_size))
+                    else:
+                        tiles.append([x, y])
+
 
     def get_tile_id(self, position):
         return self.map.tiledgidmap[self.map.get_tile_gid(*position, 0)]
+
+    def is_free(self, position):
+        return self.get_tile_id(position)
 
 
 class Pacman(pygame.sprite.Sprite):
@@ -77,9 +87,8 @@ class Pacman(pygame.sprite.Sprite):
                        load_image(f'{self.rt}/3.png')]
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = self.frames[self.cur_frame]
-
-        self.x, self.y = new_coords
-
+        if new_coords:
+            self.x, self.y = new_coords
 
     def render(self):
         delta = (self.image.get_width() - 32) // 2
@@ -87,8 +96,6 @@ class Pacman(pygame.sprite.Sprite):
 
     def get_position(self):
         return self.x, self.y
-
-
 
 
 def load_image(name, colorkey=None):
@@ -154,20 +161,21 @@ def play_window():
             if event.type == pygame.QUIT:
                 terminate()
             key = pygame.key.get_pressed()
-            if key[pygame.K_UP]:
-                pac_rot = 'up'
-            if key[pygame.K_DOWN]:
-                pac_rot = 'down'
-            if key[pygame.K_RIGHT]:
-                pac_rot = 'left'
-            if key[pygame.K_LEFT]:
-                pac_rot = 'right'
+            if key.count(True) == 1:
+                if key[pygame.K_UP]:
+                    pac_rot = 'up'
+                if key[pygame.K_DOWN]:
+                    pac_rot = 'down'
+                if key[pygame.K_RIGHT]:
+                    pac_rot = 'right'
+                if key[pygame.K_LEFT]:
+                    pac_rot = 'left'
         screen.fill('black')
         playground.render()
         hero.update(game.update_hero(), pac_rot)
         hero.render()
         pygame.display.flip()
-        clock.tick(10)
+        clock.tick(7)
 
 
 def winners_window():

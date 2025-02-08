@@ -1,3 +1,5 @@
+from pydoc import pager
+
 import pygame
 import pytmx
 import sys
@@ -216,10 +218,23 @@ def play_window():
     running = True
     game_over = False
     pac_rot = 'left'
+    stop_window = False
+    play_btn = Button(load_image('Play@0.5x.png'), 440, 590, '')
+    exit_btn = Button(load_image('Exit@0.5x.png'), 520, 590, '')
+    restart_btn = Button(load_image('Repeat-Right@0.5x.png'), 480, 590, '')
+
     while running:
+        mouse_pos = pygame.mouse.get_pos()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if play_btn.checkForInput(mouse_pos):
+                    stop_window = False
+                if exit_btn.checkForInput(mouse_pos):
+                    menu()
+                if restart_btn.checkForInput(mouse_pos):
+                    play_window()
             key = pygame.key.get_pressed()
             if key.count(True) == 1:
                 if key[pygame.K_UP]:
@@ -230,12 +245,25 @@ def play_window():
                     pac_rot = 'right'
                 if key[pygame.K_LEFT]:
                     pac_rot = 'left'
+                if key[pygame.K_SPACE] and not stop_window:
+                    stop_window = True
+
         screen.fill('black')
         playground.render()
-        hero.update(game.update_hero(), pac_rot)
         hero.render()
         a.render()
-        pygame.display.flip()
+        if stop_window:
+            surf = pygame.Surface((960, 1020))
+            text = fontb.render('Paused', True, 'black')
+            surf.fill('white')
+            surf.set_alpha(200)
+            screen.blit(surf, (0, 0))
+            screen.blit(text, (420, 510))
+            for btns in [play_btn, exit_btn, restart_btn]:
+                btns.update()
+        else:
+            hero.update(game.update_hero(), pac_rot)
+        pygame.display.update()
         clock.tick(7)
 
 
@@ -284,6 +312,7 @@ def winners_window():
 
 
 def menu():
+    screen = pygame.display.set_mode((400, 400))
     pygame.display.set_caption('Menu')
     counter = 0
     speed = 3

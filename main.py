@@ -52,10 +52,9 @@ class Playground:
         self.tile_size = self.map.tilewidth
 
     def render(self):
-        print(cnt_points_game)
-        text_cnt = fontb.render(f'{cnt_points_game}', True, (0, 0, 0))
+        text_cnt = fontb.render(f'{cnt_points_game:03}', True, 'white')
         delta = (text_cnt.get_width() - 32) // 2
-        screen.blit(text_cnt, (10 * 32 - delta, 10 * 32 - delta))
+        screen.blit(text_cnt, (32 - delta + 10, 32 - delta - 15))
         for layer in self.map.visible_layers:
             if isinstance(layer, pytmx.TiledTileLayer) and layer.name == 'background':
                 for x, y, gid, in layer:
@@ -70,9 +69,10 @@ class Playground:
                     for x, y, gid, in layer:
                         tile = self.map.get_tile_image_by_gid(gid)
 
-                        if tile:
+                        if tile and [x, y] not in [[0, 16], [29, 16]]:
                             screen.blit(tile, (x * self.tile_size,
                                                y * self.tile_size))
+
                             points.append([x, y])
             else:
                 if isinstance(layer, pytmx.TiledTileLayer) and layer.name == 'points':
@@ -81,7 +81,6 @@ class Playground:
                         if tile and [x, y] in points:
                             screen.blit(tile, (x * self.tile_size,
                                                y * self.tile_size))
-
 
     def get_tile_id(self, position):
         return self.map.tiledgidmap[self.map.get_tile_gid(*position, 0)]
@@ -112,6 +111,10 @@ class Pacman(pygame.sprite.Sprite):
         self.image = self.frames[self.cur_frame]
         if new_coords:
             self.x, self.y = new_coords
+            if self.x == 0:
+                self.x = 28
+            elif self.x == 29:
+                self.x = 1
             self.point_eating((self.x, self.y))
 
     def render(self):
@@ -126,6 +129,8 @@ class Pacman(pygame.sprite.Sprite):
         x, y = position
         if [x, y] in special_points:
             cnt_points_game += 5
+            special_points.remove([x, y])
+            points.remove([x, y])
         elif [x, y] in points:
             cnt_points_game += 1
             points.remove([x, y])
@@ -175,6 +180,25 @@ class Button:
             self.text = font.render(self.text_input, True, "white")
 
 
+class Blinky(pygame.sprite.Sprite):
+    def __init__(self, coords):
+        super().__init__()
+        self.tile_width = self.tile_height = load_image('blinky.png').get_width()
+
+        self.image = load_image('blinky.png')
+        self.rect = self.image.get_rect()
+        self.rect.x = 10
+        self.rect.y = 10
+        self.x, self.y = coords
+
+    def render(self):
+        delta = (self.image.get_width() - 32) // 2
+        screen.blit(self.image, (self.x * 32 - delta, self.y * 32 - delta))
+
+    def update(self):
+        pass
+
+
 class Enemy:
     pass
 
@@ -186,6 +210,7 @@ def play_window():
     pygame.display.set_mode((960, 1020))
     playground = Playground('m.tmx', [30, 46])
     hero = Pacman((14, 18))
+    a = Blinky((12, 16))
     ghosts = Enemy()
     game = Game(playground, hero, ghosts)
     running = True
@@ -206,10 +231,10 @@ def play_window():
                 if key[pygame.K_LEFT]:
                     pac_rot = 'left'
         screen.fill('black')
-
         playground.render()
         hero.update(game.update_hero(), pac_rot)
         hero.render()
+        a.render()
         pygame.display.flip()
         clock.tick(7)
 

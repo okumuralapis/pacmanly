@@ -1,5 +1,3 @@
-from pydoc import pager
-
 import pygame
 import pytmx
 import sys

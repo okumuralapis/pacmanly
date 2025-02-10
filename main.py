@@ -3,6 +3,7 @@ import pytmx
 import sys
 import os
 import csv
+import random
 
 os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (500, 50)
 pygame.init()
@@ -16,6 +17,7 @@ tiles = []
 points = []
 special_points = [[1, 7], [1, 27], [28, 7], [28, 27]]
 cnt_points_game = 0
+cnt_maps = 0
 
 
 class Game:
@@ -111,10 +113,13 @@ class Pacman(pygame.sprite.Sprite):
         self.image = self.frames[self.cur_frame]
         if new_coords:
             self.x, self.y = new_coords
-            if self.x == 0:
-                self.x = 28
-            elif self.x == 29:
-                self.x = 1
+            if cnt_maps <= 2:
+                if self.x == 0:
+                    self.x = 24
+                elif self.x == 24:
+                    self.x = 1
+            else:
+                pass
             self.point_eating((self.x, self.y))
 
     def render(self):
@@ -204,22 +209,23 @@ class Enemy:
 
 
 def play_window():
-    global cnt_points_game
+    global cnt_points_game, cnt_maps
     cnt_points_game = 0
     pygame.display.set_caption('Game')
-    pygame.display.set_mode((960, 1020))
-    playground = Playground('m.tmx', [30, 46])
-    hero = Pacman((14, 18))
-    a = Blinky((12, 16))
+    pygame.display.set_mode((25 * 32, 25 * 32))
+    maps = ['m.tmx', 'm2.tmx', 'm3.tmx']
+    playground = Playground(maps[random.randint(0, 2)], [30, 46])
+    hero = Pacman((11, 16))
+    a = Blinky((10, 12))
     ghosts = Enemy()
     game = Game(playground, hero, ghosts)
     running = True
     game_over = False
     pac_rot = 'left'
     stop_window = False
-    play_btn = Button(load_image('Play@0.5x.png'), 440, 590, '')
-    exit_btn = Button(load_image('Exit@0.5x.png'), 520, 590, '')
-    restart_btn = Button(load_image('Repeat-Right@0.5x.png'), 480, 590, '')
+    play_btn = Button(load_image('Play@0.5x.png'), 340, 480, '')
+    exit_btn = Button(load_image('Exit@0.5x.png'), 380, 480, '')
+    restart_btn = Button(load_image('Repeat-Right@0.5x.png'), 420, 480, '')
 
     while running:
         mouse_pos = pygame.mouse.get_pos()
@@ -251,12 +257,12 @@ def play_window():
         hero.render()
         a.render()
         if stop_window:
-            surf = pygame.Surface((960, 1020))
+            surf = pygame.Surface((25 * 32, 25 * 32))
             text = fontb.render('Paused', True, 'black')
             surf.fill('white')
             surf.set_alpha(200)
             screen.blit(surf, (0, 0))
-            screen.blit(text, (420, 510))
+            screen.blit(text, (320, 400))
             for btns in [play_btn, exit_btn, restart_btn]:
                 btns.update()
         else:
@@ -310,6 +316,7 @@ def winners_window():
 
 
 def menu():
+    global cnt_maps
     screen = pygame.display.set_mode((400, 400))
     pygame.display.set_caption('Menu')
     counter = 0

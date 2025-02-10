@@ -4,12 +4,12 @@
  <tileset firstgid="31" source="char.tsx"/>
  <layer id="5" name="background" width="25" height="25">
   <data encoding="base64" compression="zlib">
-   eJzdVFsOwyAMywX2wVdVuFyPxlE42mhHJjdyoFTbPhYJReIR2wmJyH9YFClBZPvWii9fZjiFSQ3hpeHAWKp/VMzqNz1PIjm0ldp+6pyxOAYj17O8TPK0ZuMgBrPUzhrnI78r1A+0uTEQIxHdDJ/VA/eUTyK5YrYCf6ceqm3zYuzxI9ROVwQO3lumg/VB7GAj55HpvZk+sHcbP/y/J73eO+CQR/q8vrP7LO+pU6s7GJ45Ok7YkdxhelnNPR1Q83KRZ5nRhRgTf7eLoX/G9IfyU/8+W+G+7UuW01/PduRra37VbB8xDMBSXxC7k6uC76wOnXvsj92Zu8Az67y0ccw8lcHcVW3i9fVotn/CvNneW8j5ytr74AkHGI2m
+   eJzdVEkOAyEMy7WHSuVUDXxunsZTeFpnIZUnclhGPTVShEQgtgmJyH9YFClBZB3118TZ3eO5lhlOYVJDODUcGO9tfW6Y27pqPInkUD3V/dSIsTwGI2+x/J7kac3mQQxmqcYq5+N9F6gfaHNzIEYiuhk+qwfuKZ9E3orZAvydeqi21cux549QO/UIHLy7TAfrg9jARs4903MzfWDPVn74fy96vXvAIff0eX1n99m7p0at7mB45ui4YEdyhullNfd0QM3LIM8yowsxJv5uE0P/jOkP5afrN7bAeduX7E3vzPbRnlGzs8T796Nm+4hhWK5m7rbequA9q0PnHvtjd+Yu8Mw6L20eM0+lM3dVm3h93ZvtvzBvtrf8AZxHfO+DDxSEjZ8=
   </data>
  </layer>
  <layer id="6" name="points" width="25" height="25">
   <data encoding="base64" compression="zlib">
-   eJztVEEOwCAI4yP6/2duR7fQlk6zZItNuCC2AqYRGw7aGb0YYdS2QaPHFT3JjXXoLONRGk+CabC5MKj5qT6yuyqH+kA7d6B2ju64Gi62Rn5W+esVDZfna7P6k8Zb3r7Ce1lvzG8d30Vc7O2zOcTtvJnV3fmcnTuhvH0lDoD2GQ0=
+   eJztVEkSgDAI4yPl/8/UY3VI0mj1RGa4ACUsnUQ0HIzTctHCyB0TR8YVWfjmPBSr6iiOJ8Y42F4Y1P7UHNVb5UNzoJs7UDdHb1wOF82B41/cfPXfOxwumqPGX9q+Q3vZbExvHd1FtVjvb32ottMzy7vXc27umNL2nTgAcucY0Q==
   </data>
  </layer>
 </map>

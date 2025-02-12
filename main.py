@@ -17,7 +17,8 @@ points = []
 special_points = [(1, 3), (23, 3), (23, 23), (1, 23)]
 cnt_points_game = 0
 GHOST_EVENT_TYPE = pygame.USEREVENT
-pygame.time.set_timer(GHOST_EVENT_TYPE, 3500)
+GHOST_RUNNING_TYPE = pygame.USEREVENT
+pygame.time.set_timer(GHOST_EVENT_TYPE, 4000)
 
 
 class Game:
@@ -53,7 +54,7 @@ class Game:
             i.move(*self.hero.get_position())
 
     def check_collide(self):
-        return pygame.sprite.spritecollideany(self.hero, self.enemies)
+        return pygame.sprite.spritecollideany(self.hero, self.cur_ghost)
 
 
 class Playground:
@@ -401,7 +402,10 @@ class Clyde(pygame.sprite.Sprite):
         return self.x, self.y
 
     def set_position(self, position):
+        delta = (self.image.get_width() - 32) // 2
         self.x, self.y = position
+        self.rect.x = self.x * 32 - delta
+        self.rect.y = self.y * 32 - delta
 
     def move(self, px, py):
         pr = [[-1] * 25 for _ in range(25)]
@@ -447,7 +451,6 @@ def play_window():
                  'm3.tmx': {'blinky_pos': (11, 14), 'inky_pos': (12, 14),
                             'clyde_pos': (13, 14), 'pinky_pos': (14, 14)}}
     cnt_points_game = 0
-    pinky_counter = 0
     tiles = []
     points = []
     pygame.display.set_caption('Game')
@@ -470,7 +473,6 @@ def play_window():
     play_btn = Button(load_image('Play@0.5x.png'), 340, 480, '')
     exit_btn = Button(load_image('Exit@0.5x.png'), 380, 480, '')
     restart_btn = Button(load_image('Repeat-Right@0.5x.png'), 420, 480, '')
-
     while running:
         mouse_pos = pygame.mouse.get_pos()
         for event in pygame.event.get():
@@ -513,19 +515,20 @@ def play_window():
         elif game_over:
             surf = pygame.Surface((25 * 32, 25 * 32))
             text = fontb.render('GAME OVER', True, 'black')
+            text1 = font.render(f"you've collected {cnt_points_game} points!!!", True, 'black')
             surf.fill('white')
             surf.set_alpha(200)
             screen.blit(surf, (0, 0))
             screen.blit(text, (320, 400))
+            screen.blit(text1, (280, 440))
             exit_btn.update()
         else:
             hero.update(game.update_hero(), pac_rot)
-            pygame.time.wait(50)
             game.move_enemy()
             if game.check_collide():
                 game_over = True
         pygame.display.update()
-        clock.tick(7)
+        clock.tick(6)
 
 
 def winners_window():
@@ -545,7 +548,7 @@ def winners_window():
         mouse_pos = pygame.mouse.get_pos()
         title = fontb.render('Best players', True, 'white')
 
-        clock.tick(7)
+        clock.tick(60)
         if counter < speed * len('Best players'):
             counter += 1
         elif counter >= speed * len('Best players'):

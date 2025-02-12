@@ -250,6 +250,7 @@ class Inky(pygame.sprite.Sprite):
         self.rect.x = self.x * 32 - delta
         self.rect.y = self.y * 32 - delta
 
+
 # move всем врагам/ основной цикл: if зависимость от колва tick clock-a
 class Pinky(pygame.sprite.Sprite):
     def __init__(self, coords):

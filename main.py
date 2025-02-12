@@ -12,18 +12,11 @@ pygame.display.set_caption('Menu')
 font = pygame.font.Font('data/monogram.ttf', 30)
 fontb = pygame.font.Font('data/monogram.ttf', 50)
 clock = pygame.time.Clock()
-all_sprites = pygame.sprite.Group()
 tiles = []
 points = []
 special_points = [(1, 3), (23, 3), (23, 23), (1, 23)]
 cnt_points_game = 0
-cnt_maps = 0
-ghost_pos = {'m.tmx': {'blinky_pos': (10, 12), 'inky_pos': (11, 12),
-                       'clyde_pos': (12, 12), 'pinky_pos': (13, 12)},
-             'm2.tmx': {'blinky_pos': (10, 14), 'inky_pos': (11, 14),
-                        'clyde_pos': (12, 14), 'pinky_pos': (13, 14)},
-             'm3.tmx': {'blinky_pos': (11, 14), 'inky_pos': (12, 14),
-                        'clyde_pos': (13, 14), 'pinky_pos': (14, 14)}}
+V_PINKY = 2
 
 
 class Game:
@@ -31,7 +24,7 @@ class Game:
         self.map = map
         self.hero = hero
         self.clyde, self.blinky, self.inky, self.pinky = ghosts
-        self.enemies = [self.clyde, self.blinky, self.inky, self.pinky]
+        self.enemies = pygame.sprite.Group(self.clyde, self.blinky, self.inky, self.pinky)
 
     def render(self):
         self.map.render()
@@ -54,9 +47,10 @@ class Game:
         return
 
     def move_enemy(self):
-        next_position = self.map.find_path_step(self.blinky.get_position(),
-                                                self.hero.get_position())
-        self.blinky.set_position(next_position)
+        self.pinky.move(*self.hero.get_position())
+
+    def check_collide(self):
+        return pygame.sprite.spritecollideany(self.hero, self.enemies)
 
 
 class Playground:
@@ -98,33 +92,11 @@ class Playground:
                                                y * self.tile_size))
 
     def get_tile_id(self, position):
-        return self.map.tiledgidmap[self.map.get_tile_gid(*position, 0)]
+        if self.map.get_tile_gid(*position, 0):
+            return self.map.tiledgidmap[self.map.get_tile_gid(*position, 0)]
 
     def is_free(self, position):
         return self.get_tile_id(position)
-
-    # попытка
-    def find_path_step(self, start, target):
-        INF = 1000
-        x, y = start
-        distance = [[INF] * self.width for _ in range(self.height)]
-        distance[y][x] = 0
-        prev = [[None] * self.width for _ in range(self.height)]
-        queue = [(x, y)]
-        while queue:
-            x, y = queue.pop(0)
-            for dx, dy in (1, 0), (0, 1), (-1, 0), (0, -1):
-                next_x, next_y = x + dx, y + dy
-                if 0 <= next_x < self.width and 0 < next_y < self.height and \
-                        self.is_free((next_x, next_y)) and distance[next_x][next_y] == INF:
-                    distance[next_y][next_x] = distance[y][x] + 1
-                    prev[next_y][next_x] = (x, y)
-        x, y = target
-        if distance[y][x] == INF or start == target:
-            return start
-        while prev[y][x] != start:
-            x, y = prev[y][x]
-        return x, y
 
 
 class Pacman(pygame.sprite.Sprite):
@@ -149,13 +121,11 @@ class Pacman(pygame.sprite.Sprite):
         self.image = self.frames[self.cur_frame]
         if new_coords:
             self.x, self.y = new_coords
-            if cnt_maps <= 2:
-                if self.x == 0:
-                    self.x = 24
-                elif self.x == 24:
-                    self.x = 1
-            else:
-                pass
+            if self.x == 0:
+                self.x = 24
+            elif self.x == 24:
+                self.x = 1
+            self.set_position((self.x, self.y))
             self.point_eating((self.x, self.y))
 
     def render(self):
@@ -175,6 +145,12 @@ class Pacman(pygame.sprite.Sprite):
         elif [x, y] in points:
             cnt_points_game += 1
             points.remove([x, y])
+
+    def set_position(self, position):
+        delta = (self.image.get_width() - 32) // 2
+        self.x, self.y = position
+        self.rect.x = self.x * 32 - delta
+        self.rect.y = self.y * 32 - delta
 
 
 def load_image(name, colorkey=None):
@@ -242,7 +218,10 @@ class Blinky(pygame.sprite.Sprite):
         return self.x, self.y
 
     def set_position(self, position):
+        delta = (self.image.get_width() - 32) // 2
         self.x, self.y = position
+        self.rect.x = self.x * 32 - delta
+        self.rect.y = self.y * 32 - delta
 
 
 class Inky(pygame.sprite.Sprite):
@@ -266,9 +245,12 @@ class Inky(pygame.sprite.Sprite):
         return self.x, self.y
 
     def set_position(self, position):
+        delta = (self.image.get_width() - 32) // 2
         self.x, self.y = position
+        self.rect.x = self.x * 32 - delta
+        self.rect.y = self.y * 32 - delta
 
-
+# move всем врагам/ основной цикл: if зависимость от колва tick clock-a
 class Pinky(pygame.sprite.Sprite):
     def __init__(self, coords):
         super().__init__()
@@ -282,7 +264,49 @@ class Pinky(pygame.sprite.Sprite):
 
         # pygame.time.set_timer(ENEMY_EVENT_TYPE, self.delay)
 
+    def move(self, px, py):
+        pr = [[-1] * 25 for _ in range(25)]
+        qu = []
+        qu.append((self.x, self.y))
+        i = 0
+        used = [[0] * 25 for _ in range(25)]
+        used[self.x][self.y] = 1
+        while len(qu) != i:
+            # print("!", qu[i])
+            now = qu[i]
+            i += 1
+            for j in [(1, 0), (0, 1), (-1, 0), (0, -1)]:
+                tx = now[0] + j[0]
+                ty = now[1] + j[1]
+                # print("^", (tx, ty))
+
+                if [tx, ty] in tiles:
+                    if used[tx][ty] == 0:
+                        # print("*", (tx, ty))
+                        qu.append((tx, ty))
+                        pr[tx][ty] = now
+                        used[tx][ty] = 1
+                        if px == tx and py == ty:
+                            # print("&")
+                            break
+            else:
+                continue
+            break
+        nx = px
+        ny = py
+        prevx = nx
+        prevy = ny
+        # print(pr)
+        while pr[nx][ny] != -1:
+            # print("%%%")
+            prevx = nx
+            prevy = ny
+            nx, ny = pr[nx][ny]
+        print(prevx, prevy)
+        self.set_position((prevx, prevy))
+
     def render(self):
+
         delta = (self.image.get_width() - 32) // 2
         screen.blit(self.image, (self.x * 32 - delta, self.y * 32 - delta))
 
@@ -290,7 +314,10 @@ class Pinky(pygame.sprite.Sprite):
         return self.x, self.y
 
     def set_position(self, position):
+        delta = (self.image.get_width() - 32) // 2
         self.x, self.y = position
+        self.rect.x = self.x * 32 - delta
+        self.rect.y = self.y * 32 - delta
 
 
 class Clyde(pygame.sprite.Sprite):
@@ -318,8 +345,15 @@ class Clyde(pygame.sprite.Sprite):
 
 
 def play_window():
-    global cnt_points_game, cnt_maps
+    global cnt_points_game
+    ghost_pos = {'m.tmx': {'blinky_pos': (10, 13), 'inky_pos': (11, 13),
+                           'clyde_pos': (12, 13), 'pinky_pos': (13, 13)},
+                 'm2.tmx': {'blinky_pos': (10, 14), 'inky_pos': (11, 14),
+                            'clyde_pos': (12, 14), 'pinky_pos': (13, 14)},
+                 'm3.tmx': {'blinky_pos': (11, 14), 'inky_pos': (12, 14),
+                            'clyde_pos': (13, 14), 'pinky_pos': (14, 14)}}
     cnt_points_game = 0
+    pinky_counter = 0
     pygame.display.set_caption('Game')
     pygame.display.set_mode((25 * 32, 25 * 32))
     maps = ['m.tmx', 'm2.tmx', 'm3.tmx']
@@ -330,7 +364,7 @@ def play_window():
     b = Inky(ghost_pos[maps[map_num]]['inky_pos'])
     c = Pinky(ghost_pos[maps[map_num]]['pinky_pos'])
     d = Clyde(ghost_pos[maps[map_num]]['clyde_pos'])
-    game = Game(playground, hero, a, b, c, d)
+    game = Game(playground, hero, d, a, b, c)
     running = True
     game_over = False
     pac_rot = 'left'
@@ -363,7 +397,6 @@ def play_window():
                     pac_rot = 'left'
                 if key[pygame.K_SPACE] and not stop_window:
                     stop_window = True
-
         screen.fill('black')
         game.render()
         if stop_window:
@@ -377,8 +410,22 @@ def play_window():
                 btns.update()
         else:
             hero.update(game.update_hero(), pac_rot)
-            #game.move_enemy()
+            if pinky_counter % V_PINKY == 0:
+                game.move_enemy()
+            if game.check_collide():
+                game_over = True
+        if game_over:
+            surf = pygame.Surface((25 * 32, 25 * 32))
+            text = fontb.render('GAME OVER', True, 'black')
+            surf.fill('white')
+            surf.set_alpha(200)
+            screen.blit(surf, (0, 0))
+            screen.blit(text, (320, 400))
+            for btns in [play_btn, exit_btn, restart_btn]:
+                btns.update()
+
         pygame.display.update()
+        pinky_counter += 1
         clock.tick(7)
 
 
@@ -399,7 +446,7 @@ def winners_window():
         mouse_pos = pygame.mouse.get_pos()
         title = fontb.render('Best players', True, 'white')
 
-        clock.tick(60)
+        clock.tick(7)
         if counter < speed * len('Best players'):
             counter += 1
         elif counter >= speed * len('Best players'):

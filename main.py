@@ -16,9 +16,17 @@ tiles = []
 points = []
 special_points = [(1, 3), (23, 3), (23, 23), (1, 23)]
 cnt_points_game = 0
-GHOST_EVENT_TYPE = pygame.USEREVENT
-GHOST_RUNNING_TYPE = pygame.USEREVENT
-pygame.time.set_timer(GHOST_EVENT_TYPE, 4000)
+GHOST_ADDING__EVENT_TYPE = pygame.USEREVENT
+pygame.time.set_timer(GHOST_ADDING__EVENT_TYPE, 4000)
+game_over = False
+max_point_value = 0
+
+with open('data/winners.csv', 'r', newline='\n', encoding="utf8") as f:
+    try:
+        num = int(f.readlines()[-1].split(';')[0])
+    except ValueError:
+        num = 0
+CNT_PLAY_TIMES = num + 1
 
 
 class Game:
@@ -28,6 +36,8 @@ class Game:
         self.hero = hero
         self.clyde, self.blinky, self.inky, self.pinky = ghosts
         self.enemies = pygame.sprite.Group(self.clyde, self.blinky, self.inky, self.pinky)
+        self.counters = [0, 0, 0, 0]
+        self.V = [2, 2, 2, 2]
 
     def render(self):
         self.map.render()
@@ -50,15 +60,20 @@ class Game:
         return
 
     def move_enemy(self):
-        for i in self.cur_ghost:
-            i.move(*self.hero.get_position())
+        for num, i in enumerate(self.cur_ghost, start=0):
+            if self.counters[num] % self.V[num] == 0:
+                i.move(*self.hero.get_position())
 
     def check_collide(self):
         return pygame.sprite.spritecollideany(self.hero, self.cur_ghost)
 
+    def update_counters(self):
+        for i in self.counters:
+            i += 1.4
+
 
 class Playground:
-    def __init__(self, filename, free_tiles):
+    def __init__(self, filename):
         self.map = pytmx.load_pygame(f'data/{filename}')
         self.height = self.map.height
         self.width = self.map.width
@@ -321,7 +336,6 @@ class Inky(pygame.sprite.Sprite):
         self.set_position((prevx, prevy))
 
 
-# move всем врагам/ основной цикл: if зависимость от колва tick clock-a
 class Pinky(pygame.sprite.Sprite):
     def __init__(self, coords):
         super().__init__()
@@ -442,8 +456,32 @@ class Clyde(pygame.sprite.Sprite):
         self.set_position((prevx, prevy))
 
 
+def game_over_window():
+    surf = pygame.Surface((25 * 32, 25 * 32))
+    text = fontb.render('GAME OVER', True, 'black')
+    if cnt_points_game > 0:
+        text1 = font.render(f"you've collected {cnt_points_game} points!!!", True, 'black')
+    else:
+        text1 = font.render(f"you did't collect any points:(", True, 'black')
+    surf.fill('white')
+    surf.set_alpha(200)
+    screen.blit(surf, (0, 0))
+    screen.blit(text, (320, 400))
+    screen.blit(text1, (280, 440))
+
+
+def stop_game_window():
+    surf = pygame.Surface((25 * 32, 25 * 32))
+    text = fontb.render('Paused', True, 'black')
+    surf.fill('white')
+    surf.set_alpha(200)
+    screen.blit(surf, (0, 0))
+    screen.blit(text, (320, 400))
+
+
 def play_window():
-    global cnt_points_game, tiles, points
+    global cnt_points_game, tiles, points, game_over
+
     ghost_pos = {'m.tmx': {'blinky_pos': (10, 13), 'inky_pos': (11, 13),
                            'clyde_pos': (12, 13), 'pinky_pos': (13, 13)},
                  'm2.tmx': {'blinky_pos': (10, 14), 'inky_pos': (11, 14),
@@ -457,7 +495,7 @@ def play_window():
     pygame.display.set_mode((25 * 32, 25 * 32))
     maps = ['m.tmx', 'm2.tmx', 'm3.tmx']
     map_num = random.randint(0, 2)
-    playground = Playground(maps[map_num], [25, 25])
+    playground = Playground(maps[map_num])
     hero = Pacman((12, 16))
     a = Blinky(ghost_pos[maps[map_num]]['blinky_pos'])
     b = Inky(ghost_pos[maps[map_num]]['inky_pos'])
@@ -467,9 +505,9 @@ def play_window():
     cur_ghosts = pygame.sprite.Group()
     game = Game(playground, hero, cur_ghosts, d, a, b, c)
     running = True
-    game_over = False
     pac_rot = 'left'
     stop_window = False
+    game_over = False
     play_btn = Button(load_image('Play@0.5x.png'), 340, 480, '')
     exit_btn = Button(load_image('Exit@0.5x.png'), 380, 480, '')
     restart_btn = Button(load_image('Repeat-Right@0.5x.png'), 420, 480, '')
@@ -485,10 +523,9 @@ def play_window():
                     menu()
                 if restart_btn.checkForInput(mouse_pos):
                     play_window()
-            if event.type == GHOST_EVENT_TYPE:
-                if all_ghosts:
-                    cur_ghosts.add(all_ghosts[0])
-                    all_ghosts = all_ghosts[1:]
+            if all_ghosts and event.type == GHOST_ADDING__EVENT_TYPE:
+                cur_ghosts.add(all_ghosts[0])
+                all_ghosts = all_ghosts[1:]
             key = pygame.key.get_pressed()
             if key.count(True) == 1:
                 if key[pygame.K_UP]:
@@ -504,23 +541,11 @@ def play_window():
         screen.fill('black')
         game.render()
         if stop_window:
-            surf = pygame.Surface((25 * 32, 25 * 32))
-            text = fontb.render('Paused', True, 'black')
-            surf.fill('white')
-            surf.set_alpha(200)
-            screen.blit(surf, (0, 0))
-            screen.blit(text, (320, 400))
+            stop_game_window()
             for btns in [play_btn, exit_btn, restart_btn]:
                 btns.update()
         elif game_over:
-            surf = pygame.Surface((25 * 32, 25 * 32))
-            text = fontb.render('GAME OVER', True, 'black')
-            text1 = font.render(f"you've collected {cnt_points_game} points!!!", True, 'black')
-            surf.fill('white')
-            surf.set_alpha(200)
-            screen.blit(surf, (0, 0))
-            screen.blit(text, (320, 400))
-            screen.blit(text1, (280, 440))
+            game_over_window()
             exit_btn.update()
         else:
             hero.update(game.update_hero(), pac_rot)
@@ -528,6 +553,7 @@ def play_window():
             if game.check_collide():
                 game_over = True
         pygame.display.update()
+        game.update_counters()
         clock.tick(6)
 
 
@@ -537,28 +563,32 @@ def winners_window():
     speed = 3
     finished = False
     snip = font.render('', True, 'white')
-    b = 40
+    h = 100
 
-    with open('data/winners.csv') as f:
-        reader = csv.reader(f, delimiter=';', quotechar='"')
-        re = [f'{names} {score}' for names, score in reader]
+    with open('data/winners.csv', encoding="utf8") as csvfile:
+        reader = csv.DictReader(csvfile, delimiter=';', quotechar='"')
+        res = sorted(reader, key=lambda x: int(x['cnt']), reverse=True)
+    re = [(i['player'], i['cnt']) for i in res[:6]]
+    coords = [(80, 100 + h) for h in range(50, 350, 50)]
 
     while True:
         screen.fill('#131332')
         mouse_pos = pygame.mouse.get_pos()
         title = fontb.render('Best players', True, 'white')
 
-        clock.tick(60)
+        clock.tick(100)
         if counter < speed * len('Best players'):
             counter += 1
         elif counter >= speed * len('Best players'):
             finished = True
         snip = fontb.render('Best players'[0:counter // speed], True, 'white')
         screen.blit(snip, (90, 50))
-        for i in re[1:]:
-            tmp = font.render(i, True, 'white')
-            screen.blit(tmp, (100, b))
-            clock.tick(60)
+        for i in range(len(re)):
+            tmp = font.render(
+                f'{re[i][0]}player{'.' * (20 - (len(re[i][0]) + len(re[i][1]) + len("player")))}{re[i][1]}',
+                True, 'white')
+            screen.blit(tmp, coords[i])
+            clock.tick(100)
 
         btn_pic = load_image('UI-03.png')
         btn_pic = pygame.transform.scale(btn_pic, (100, 40))
@@ -576,7 +606,10 @@ def winners_window():
 
 
 def menu():
-    global cnt_maps
+    global cnt_maps, CNT_PLAY_TIMES, game_over, max_point_value
+    if game_over:
+        max_point_value = max(max_point_value, cnt_points_game)
+    game_over = False
     screen = pygame.display.set_mode((400, 400))
     pygame.display.set_caption('Menu')
     counter = 0
@@ -609,6 +642,13 @@ def menu():
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                with open('data/winners.csv', 'a', newline='\n', encoding="utf8") as f:
+                    writer = csv.DictWriter(
+                        f, fieldnames=['player', 'cnt'],
+                        delimiter=';', quoting=csv.QUOTE_NONNUMERIC)
+                    writer.writerow({'player': CNT_PLAY_TIMES,
+                                     'cnt': max_point_value})
+                max_point_value = 0
                 terminate()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if play_btn.checkForInput(mouse_pos):
@@ -616,6 +656,13 @@ def menu():
                 if winners_btn.checkForInput(mouse_pos):
                     winners_window()
                 if quit_btn.checkForInput(mouse_pos):
+                    with open('data/winners.csv', 'a', newline='\n', encoding="utf8") as f:
+                        writer = csv.DictWriter(
+                            f, fieldnames=['player', 'cnt'],
+                            delimiter=';', quoting=csv.QUOTE_NONNUMERIC)
+                        writer.writerow({'player': CNT_PLAY_TIMES,
+                                         'cnt': max_point_value})
+                    max_point_value = 0
                     terminate()
         pygame.display.update()
 

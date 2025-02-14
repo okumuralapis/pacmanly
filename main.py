@@ -616,11 +616,10 @@ def menu():
     speed = 3
     finished = False
     snip = font.render('', True, 'white')
-
+    title = fontb.render('Pacman', True, 'white')
     while True:
         screen.fill('#131332')
         mouse_pos = pygame.mouse.get_pos()
-        title = fontb.render('Pacman', True, 'white')
 
         clock.tick(60)
         if counter < speed * len('Pacman'):

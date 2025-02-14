@@ -37,7 +37,7 @@ class Game:
         self.clyde, self.blinky, self.inky, self.pinky = ghosts
         self.enemies = pygame.sprite.Group(self.clyde, self.blinky, self.inky, self.pinky)
         self.counters = [0, 0, 0, 0]
-        self.V = [2, 2, 2, 2]
+        self.V = [1, 1, 1, 1]
 
     def render(self):
         self.map.render()
@@ -69,7 +69,7 @@ class Game:
 
     def update_counters(self):
         for i in self.counters:
-            i += 1.4
+            i += 0.1
 
 
 class Playground:
